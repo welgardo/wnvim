@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  shell:
+    name: Shell checks (bash -n + shellcheck)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: bash syntax check
+        run: |
+          set -e
+          for f in install.sh uninstall.sh scripts/wnvim.sh; do
+            bash -n "$f"
+            echo "bash -n OK: $f"
+          done
+      - name: shellcheck
+        run: shellcheck -S warning install.sh uninstall.sh scripts/wnvim.sh
+
+  lua-syntax:
+    name: Lua syntax check (luajit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install luajit
+        run: sudo apt-get update && sudo apt-get install -y luajit
+      - name: Syntax-check every Lua file
+        run: |
+          set -e
+          fail=0
+          while IFS= read -r f; do
+            if ! luajit -bl "$f" >/dev/null 2>&1; then
+              echo "LUA SYNTAX FAIL: $f"; fail=1
+            fi
+          done < <(find init.lua lua -name '*.lua')
+          [ "$fail" = "0" ] && echo "All Lua files parse cleanly."
+
+  smoke:
+    name: Headless startup, themes & which-key smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Neovim (stable)
+        run: |
+          set -e
+          curl -fsSLo /tmp/nvim.tar.gz \
+            "https://github.com/neovim/neovim/releases/download/stable/nvim-linux-x86_64.tar.gz"
+          sudo mkdir -p /opt/nvim
+          sudo tar -xzf /tmp/nvim.tar.gz -C /opt/nvim --strip-components=1
+          echo "/opt/nvim/bin" >> "$GITHUB_PATH"
+      - name: Install plugin tree into isolated config (uses committed lazy-lock.json)
+        env:
+          HOME: ${{ runner.temp }}/fakehome
+        run: |
+          set -e
+          mkdir -p "$HOME/.config/nvim"
+          tar cf - --exclude='./.git' . | (cd "$HOME/.config/nvim" && tar xf -)
+          XDG_CONFIG_HOME="$HOME/.config" XDG_DATA_HOME="$HOME/.local/share" \
+            nvim --headless "+Lazy! sync" +qa
+          test -s "$HOME/.local/share/nvim/lazy/lazy.nvim/lua/lazy/init.lua"
+      - name: Startup error capture (messages must be clean)
+        env:
+          HOME: ${{ runner.temp }}/fakehome
+        run: |
+          set -e
+          OUT=$(XDG_CONFIG_HOME="$HOME/.config" XDG_DATA_HOME="$HOME/.local/share" \
+                nvim --headless \
+                "+lua local msgs={} local orig=vim.notify vim.notify=function(m,...) table.insert(msgs,tostring(m)) end vim.defer_fn(function() vim.notify=orig print('<<MSG>>'..table.concat(msgs,'\n')) vim.cmd('qa!') end, 3000)")
+          echo "$OUT"
+          if echo "$OUT" | grep -qiE 'error|issues reported|Invalid field'; then
+            echo "::error::startup produced error/which-key notifications"; exit 1
+          fi
+      - name: which-key health check
+        env:
+          HOME: ${{ runner.temp }}/fakehome
+        run: |
+          set -e
+          OUT=$(XDG_CONFIG_HOME="$HOME/.config" XDG_DATA_HOME="$HOME/.local/share" \
+                nvim --headless "+checkhealth which-key" "+lua vim.defer_fn(function() vim.cmd('qa!') end, 3000)" 2>&1)
+          echo "$OUT"
+          if echo "$OUT" | grep -qiE 'issues with your config|issues with your mappings|^ERROR'; then
+            echo "::error::which-key health reported problems"; exit 1
+          fi
+      - name: Verify all 20 theme variants build (>150 highlights each)
+        env:
+          HOME: ${{ runner.temp }}/fakehome
+        run: |
+          set -e
+          XDG_CONFIG_HOME="$HOME/.config" XDG_DATA_HOME="$HOME/.local/share" \
+          nvim --headless --clean -c "set rtp^=$HOME/.config/nvim" \
+            -c 'lua local t=require("wnvim.themes"); local st=t.styles(); assert(#st==10,"expected 10 styles"); for i=1,10 do for _,m in ipairs({"day","night"}) do local n=0; for _ in pairs(t.build_highlights(i,m)) do n=n+1 end; assert(n>150,"too few highlights "..i.." "..m); print(string.format("style %d %-5s %d highlights", i, m, n)) end end; print("THEMES_OK")' \
+            -c 'qa!' | tee /dev/stderr | grep -q THEMES_OK
