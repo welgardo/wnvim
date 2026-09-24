@@ -96,7 +96,7 @@ You don't have to choose. Re-install in custom mode and your original config
 stays active for plain `nvim`, while wnvim runs via its own command:
 
 ```sh
-git clone https://github.com/<you>/wnvim && cd wnvim
+git clone <your-wnvim-repository-url> && cd wnvim
 ./install.sh --custom            # or: ./install.sh --custom --appname
 ```
 

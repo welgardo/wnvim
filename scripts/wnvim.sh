@@ -29,7 +29,7 @@ set -u  # NOTE: intentionally NOT `set -e`: we forward exit codes ourselves.
 WNVIM_CONFIG_SOURCE="__WNVIM_INSTALL_DIR__"
 WNVIM_MODE="__WNVIM_MODE__"            # "standard" | "custom"
 WNVIM_USE_APPNAME="__WNVIM_USE_APPNAME__"  # "1" | "0"
-WNVIM_VERSION="1.0.0"
+WNVIM_VERSION="0.1.0"
 
 SCRIPT_NAME="$(basename "$0")"
 

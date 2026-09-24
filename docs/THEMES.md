@@ -31,7 +31,7 @@ Tab-completion is wired for `:WnvimThemeSet`.
 | 2 | Tokyo Neon | Cool night-city blues, electric accents |
 | 3 | Cyberpunk | High-saturation magenta/cyan on near-black |
 | 4 | Nord Ice | Icy blue-grey, soft and cold |
-| 5 | Gruv Warm | Warm retro earth tones |
+| 5 | Gruvbox Warm | Warm retro earth tones |
 | 6 | Monochrome | Pure greyscale, hierarchy by weight only |
 | 7 | Matrix | Terminal green-on-dark phosphor look |
 | 8 | Pastel | Soft pastel tints, gentle day mode |
@@ -76,7 +76,10 @@ the table returned by `lua/wnvim/themes/styles.lua`:
 ```
 
 The picker, `:WnvimThemeSet`, cycle commands, statusline label, and installer
-verification all iterate over the registry automatically.
+verification all iterate over the registry automatically. Note that
+`:WnvimThemeSet` tab-completion currently offers style numbers 1–10 plus
+`day`/`night`; a new style's number appears in completion as soon as it is a
+contiguous entry in the registry.
 
 ## How it renders
 

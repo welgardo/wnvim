@@ -3,6 +3,12 @@
 Leader is `<Space>` (set before any plugin loads). Which-key shows all of
 these live: press `<Space>` and wait, or press an incomplete prefix.
 
+> Note: which-key only labels keymaps that exist when it loads
+> (`VeryLazy`). Core maps defined at startup — including `[d`/`]d`,
+> `<leader>w`, `<leader>q`, `<S-h>`/`<S-l>` — carry their descriptions and
+> appear in the which-key popup; the group headers for `[`, `]`, `<leader>f`,
+> etc. are registered by the plugin specs.
+
 ## Core (always available, no plugins required)
 
 Defined in `lua/wnvim/core/keymaps.lua`.

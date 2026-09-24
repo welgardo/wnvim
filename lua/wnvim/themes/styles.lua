@@ -120,10 +120,10 @@ return {
     },
   },
 
-  -- ── Style 5: Gruv Warm ─────────────────────────────────────────
+  -- ── Style 5: Gruvbox Warm ──────────────────────────────────────
   -- Retro warm earth tones (gruvbox-style direction, own values).
   [5] = {
-    name = 'Gruv Warm',
+    name = 'Gruvbox Warm',
     tagline = 'Retro groove, warm earth tones',
     italic = false,
     day = {

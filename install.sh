@@ -23,7 +23,7 @@
 
 set -u
 
-VERSION="1.0.0"
+VERSION="0.1.0"
 REPO_DIR="$(cd "$(dirname "$(readlink -f "$0" 2>/dev/null || echo "$0")")" && pwd)"
 
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"

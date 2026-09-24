@@ -495,12 +495,24 @@ function M.set_mode(mode)
   M.apply(M._current.style, mode)
 end
 
+--- Re-apply the saved selection *after* plugins had a chance to load
+--- (VeryLazy). This repairs highlight groups that lazy-loaded plugins
+--- (lualine, which-key, ...) overwrite during their own setup, while
+--- still respecting a theme the user switched to during startup.
+local function reapply_if_unchanged(style, mode)
+  local cur = M._current
+  if cur and cur.style == style and cur.mode == mode then
+    utils.hlset(M.build_highlights(style, mode))
+  end
+end
+
 --- Startup wiring: register the ColorScheme guard so external resets
 --- (e.g. t_Co change, focus events) re-apply our highlights.
 function M.setup()
   M._current = resolve_selection()
   M.apply(M._current.style, M._current.mode, { persist = false })
 
+  local s, m = M._current.style, M._current.mode
   vim.api.nvim_create_autocmd('VimResized', {
     group = vim.api.nvim_create_augroup('wnvim_theme', { clear = true }),
     callback = function()
@@ -508,6 +520,16 @@ function M.setup()
       if M._current then
         utils.hlset(M.build_highlights(M._current.style, M._current.mode))
       end
+    end,
+  })
+
+  -- Plugin-overwrite repair: run once, after VeryLazy plugin setups.
+  vim.api.nvim_create_autocmd('User', {
+    group = vim.api.nvim_create_augroup('wnvim_theme_lazy', { clear = true }),
+    pattern = 'VeryLazy',
+    once = true,
+    callback = function()
+      vim.schedule(function() reapply_if_unchanged(s, m) end)
     end,
   })
 end

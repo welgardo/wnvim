@@ -23,7 +23,7 @@ end
 vim.g.wnvim_loaded = true
 
 local wnvim = require('wnvim.core.globals')
-wnvim.version = '1.0.0'
+wnvim.version = '0.1.0'
 
 require('wnvim.core.options')
 
